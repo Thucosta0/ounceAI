@@ -9,7 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 function TrollPage() {
   return (
     <div style={{ backgroundColor: '#000', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', margin: 0, fontFamily: 'sans-serif', textAlign: 'center' }}>
-      <img src="/imgtroll.png" alt="Troll" style={{ maxWidth: '400px', marginBottom: '20px', borderRadius: '20px' }} />
+      <img src="/imgtroll.webp" alt="Troll" style={{ maxWidth: '400px', marginBottom: '20px', borderRadius: '20px' }} />
       <h1 style={{ color: '#ff3333' }}>Não foi dessa vez.</h1>
       <p>Tentativa de ataque registrada.</p>
     </div>

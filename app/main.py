@@ -56,7 +56,7 @@ def require_login():
             </style>
         </head>
         <body>
-            <img src="/imgtroll.png" alt="Troll">
+            <img src="/imgtroll.webp" alt="Troll">
             <h1>Não foi dessa vez.</h1>
             <p>Tentativa de ataque registrada.</p>
         </body>

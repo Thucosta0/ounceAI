@@ -19,7 +19,7 @@ const Layout = () => {
       <nav className="fixed bottom-0 md:top-0 left-0 w-full md:w-24 md:h-full flex md:flex-col items-center justify-around md:justify-start md:py-6 bg-zinc-950/70 backdrop-blur-xl border-t md:border-t-0 md:border-r border-zinc-800/80 shadow-[0_30px_80px_rgba(15,23,42,0.55)] z-40 p-3 md:p-4">
         <div className="hidden md:flex items-center justify-center w-full px-2 mb-8">
           <Link to="/" className="w-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105">
-            <img src="/logoounceai.png" alt="OunceAI Logo" className="w-full h-auto object-contain" />
+            <img src="/logoounceai.webp" alt="OunceAI Logo" className="w-full h-auto object-contain" />
           </Link>
         </div>
         
@@ -57,7 +57,7 @@ const Layout = () => {
       <main className="md:ml-20 flex-1 relative w-full overflow-x-hidden">
         <div className="md:hidden flex items-center justify-center py-4 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30 border-b border-zinc-800/50">
           <Link to="/" className="cursor-pointer transition-transform hover:scale-105">
-            <img src="/logoounce.png" alt="OunceAI Logo" className="h-8 object-contain" />
+            <img src="/logoounce.webp" alt="OunceAI Logo" className="h-8 object-contain" />
           </Link>
         </div>
         
