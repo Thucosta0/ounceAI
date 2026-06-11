@@ -1,0 +1,34 @@
+/* Layout principal */
+.app-layout {
+  @apply min-h-screen flex flex-col bg-background text-foreground;
+}
+
+.app-header {
+  @apply sticky top-0 z-40 backdrop-blur-md bg-surface/80 dark:bg-surface-dark/80 border-b border-border dark:border-border-dark px-6 py-3;
+}
+
+.sidebar {
+  @apply fixed left-0 top-0 bottom-0 w-64 bg-surface dark:bg-surface-dark border-r border-border dark:border-border-dark p-4 flex flex-col gap-1;
+}
+
+.sidebar-link {
+  @apply flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition;
+}
+.sidebar-link.active {
+  @apply bg-primary/10 text-primary font-medium;
+}
+
+.main-content {
+  @apply flex-1 p-6 md:p-8 max-w-[1600px] mx-auto w-full;
+}
+
+/* Tabela limpa */
+.table-wrapper { @apply overflow-x-auto rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark; }
+.table-header { @apply bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground px-4 py-3 text-left font-medium; }
+.table-row { @apply border-t border-border dark:border-border-dark hover:bg-muted/30 transition; }
+
+/* Scrollbar discreta */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { @apply bg-muted-foreground/20 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/40; }

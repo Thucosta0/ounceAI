@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    # Removido mapeamento direto para forçar o uso do Nginx no porto 80
+    # ports:
+    #   - "8000:8000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+    env_file:
+      - .env
+    volumes:
+      - static_content:/opt/OunceAI/frontend/dist
+    restart: unless-stopped
+    networks:
+      - default
+      - ounceai_pg_network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_content:/usr/share/nginx/html:ro
+    depends_on:
+      - web
+    restart: unless-stopped
+    networks:
+      - default
+
+volumes:
+  static_content:
+
+networks:
+  default:
+  ounceai_pg_network:
+    name: ounceai_pg_default
+    external: true
