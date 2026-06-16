@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+// Forçando rebuild
 import ReactECharts from 'echarts-for-react';
 import { ShieldCheck, AlertTriangle, Package, Target, TrendingDown, CheckCircle2, RefreshCcw, FilterX } from 'lucide-react';
 
+// Atualizado para usar filtro padrão 'all' e carregar dados completos
 const StrategicDashboard = () => {
   const [filters, setFilters] = useState({
-    date: 'today',
+    date: 'all',
     category: 'all',
     shelfId: 'all',
   });
@@ -42,8 +44,9 @@ const StrategicDashboard = () => {
   };
 
   const handleResetFilters = () => {
+    console.log("Resetando filtros para padrão (all)");
     setFilters({
-      date: 'today',
+      date: 'all',
       category: 'all',
       shelfId: 'all',
     });
@@ -145,7 +148,7 @@ const StrategicDashboard = () => {
 
   // 4. Horizontal Bar: Precisão de Detecção da IA
   const accuracyOption = {
-    title: { text: 'Acurácia de Detecção da IA por Evento', textStyle: titleStyle, left: 'center' },
+    title: { text: 'Acurácia de Detecção da IA por Categoria', textStyle: titleStyle, left: 'center' },
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}: {c}% precisão', ...tooltipStyle },
     grid: gridStyle,
     xAxis: { type: 'value', min: 0, max: 100, axisLabel: { ...textStyle, formatter: '{value}%' }, splitLine: { show: false } },
@@ -230,6 +233,7 @@ const StrategicDashboard = () => {
                 <option value="today" className="bg-zinc-900">Hoje</option>
                 <option value="7d" className="bg-zinc-900">Últimos 7 Dias</option>
                 <option value="30d" className="bg-zinc-900">Últimos 30 Dias</option>
+                <option value="all" className="bg-zinc-900">Todo o Período</option>
               </select>
             </div>
 

@@ -91,6 +91,7 @@ from app.routes.marketing import marketing_bp
 from app.routes.settings import settings_bp
 from app.routes.analytics import analytics_bp
 from app.routes.auth import auth_bp, limiter
+from app.routes.realtime import realtime_bp
 
 # --- REGISTRO DOS MÓDULOS (BLUEPRINTS) ---
 app.register_blueprint(chatbot_bp, url_prefix="/api/chat")
@@ -98,6 +99,7 @@ app.register_blueprint(marketing_bp, url_prefix="/api/marketing")
 app.register_blueprint(settings_bp, url_prefix="/api/settings")
 app.register_blueprint(analytics_bp, url_prefix="/api/analytics")
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
+app.register_blueprint(realtime_bp, url_prefix="/api/realtime")
 
 # Inicializa o Limiter no app
 limiter.init_app(app)

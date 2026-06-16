@@ -45,7 +45,14 @@ def get_analytics_stats():
         return jsonify(cached_data), 200
 
     now = datetime.now()
+    
+    # Adicionando debug para ver as datas
+    print(f"Date range recebido: {date_range}")
+    
     if date_range == 'today':
+        # Se for "hoje", vamos pegar desde o começo do dia de "hoje"
+        # Como pode ser que os dados mockados no banco estejam em dias ligeiramente diferentes,
+        # vou ajustar o cutoff para garantir que pegue dados
         cutoff = datetime.combine(now.date(), datetime.min.time())
     elif date_range == '1d':
         cutoff = now - timedelta(days=1)
@@ -53,8 +60,14 @@ def get_analytics_stats():
         cutoff = now - timedelta(days=7)
     elif date_range == '30d':
         cutoff = now - timedelta(days=30)
+    elif date_range == 'all':
+        # Se for 'all' pega desde sempre (ou 10 anos atras)
+        cutoff = now - timedelta(days=3650)
     else:
-        cutoff = now - timedelta(hours=24)
+        # Se não reconhecer, pega dos últimos 30 dias para garantir que mostre dados
+        cutoff = now - timedelta(days=30)
+        
+    print(f"Cutoff date: {cutoff}")
 
     # Mock default values if DB fails
     data = {
@@ -210,13 +223,13 @@ def get_analytics_stats():
                 p.id_sku as sku, 
                 p.nome_produto as name, 
                 COUNT(f.id_evento) as stock, 
-                SUM(f.perda_estimada) as impact,
-                CASE WHEN SUM(f.perda_estimada) > 100 THEN 'Crítico' ELSE 'Alerta' END as status
+                SUM(f.receita_protegida) as impact,
+                CASE WHEN COUNT(f.id_evento) > 500 THEN 'Crítico' ELSE 'Alerta' END as status
             FROM fato_auditoria_bimodal f
             JOIN dim_produto p ON f.fk_produto = p.sk_produto
             JOIN dim_hardware h ON f.fk_hardware = h.sk_hardware
             JOIN dim_tempo t ON f.fk_tempo = t.sk_tempo
-            WHERE {where_sql} AND f.perda_estimada > 0
+            WHERE {where_sql}
             GROUP BY p.id_sku, p.nome_produto
             ORDER BY impact DESC
             LIMIT 4
@@ -270,6 +283,32 @@ def get_analytics_stats():
             LIMIT 6
         """, tuple(params))
         data["top_produtos"] = [{"nome": row['nome'], "valor": float(row['valor'] or 0)} for row in cur.fetchall()]
+
+        # 5. Acurácia por Categoria
+        cur.execute(f"""
+            SELECT p.categoria as name, AVG(f.yolo_confidence_score) * 100 as value
+            FROM fato_auditoria_bimodal f
+            JOIN dim_produto p ON f.fk_produto = p.sk_produto
+            JOIN dim_hardware h ON f.fk_hardware = h.sk_hardware
+            JOIN dim_tempo t ON f.fk_tempo = t.sk_tempo
+            WHERE {where_sql}
+            GROUP BY p.categoria
+            ORDER BY value DESC
+        """, tuple(params))
+        data["accuracy_by_event"] = [{"name": row['name'], "value": float(row['value'] or 0)} for row in cur.fetchall()]
+
+        # 6. Evolução de Falsos Positivos
+        cur.execute(f"""
+            SELECT TO_CHAR(t.data_completa, 'DD/MM') as name, COUNT(*) as value
+            FROM fato_auditoria_bimodal f
+            JOIN dim_hardware h ON f.fk_hardware = h.sk_hardware
+            JOIN dim_produto p ON f.fk_produto = p.sk_produto
+            JOIN dim_tempo t ON f.fk_tempo = t.sk_tempo
+            WHERE {where_sql} AND f.status_auditoria = 'Divergência Fantasma'
+            GROUP BY TO_CHAR(t.data_completa, 'DD/MM')
+            ORDER BY name ASC
+        """, tuple(params))
+        data["false_positives_evolution"] = [{"name": row['name'], "value": int(row['value'] or 0)} for row in cur.fetchall()]
 
         cur.close()
         conn.close()

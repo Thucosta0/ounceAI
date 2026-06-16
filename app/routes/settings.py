@@ -25,11 +25,11 @@ def read_env_var(key):
     return ""
 
 def update_env_var(key, new_value):
-    try:
-        # Sanitização de segurança (Anti-Injection .env)
-        # Removemos quebras de linha e aspas duplas da entrada
-        new_value = new_value.replace('\n', '').replace('\r', '').replace('"', '').replace("'", "")
+    # Sanitização básica para evitar injeção de novas variáveis ou corrupção do .env
+    if new_value:
+        new_value = new_value.replace('\n', '').replace('\r', '').replace('"', "'")
         
+    try:
         lines = []
         key_found = False
         with open(env_path, 'r', encoding='utf-8') as f:

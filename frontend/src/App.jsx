@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import StrategicDashboard from './pages/StrategicDashboard';
+import RealTimeDashboard from './pages/RealTimeDashboard';
 import Ofertas from './pages/Ofertas';
 import Configuracoes from './pages/Configuracoes';
 import Login from './pages/Login';
@@ -30,6 +31,7 @@ function App() {
       }>
         <Route index element={<StrategicDashboard />} />
         <Route path="estrategico" element={<StrategicDashboard />} />
+        <Route path="tempo-real" element={<RealTimeDashboard />} />
         <Route path="ofertas" element={<Ofertas />} />
         <Route path="configuracoes" element={<Configuracoes />} />
       </Route>

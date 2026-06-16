@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { BarChart3, Tag, Settings, LogOut } from 'lucide-react';
+import { BarChart3, Tag, Settings, LogOut, Activity } from 'lucide-react';
 import Chat from './Chat';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,6 +9,7 @@ const Layout = () => {
 
   const navItems = [
     { path: '/', icon: <BarChart3 size={24} />, label: 'Visão' },
+    { path: '/tempo-real', icon: <Activity size={24} />, label: 'Tempo Real' },
     { path: '/ofertas', icon: <Tag size={24} />, label: 'Ofertas' },
     { path: '/configuracoes', icon: <Settings size={24} />, label: 'Configurações' },
   ];
