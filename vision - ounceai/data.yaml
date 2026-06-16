@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 3
+names: ['Caixa de Leite', 'Coca Cola', 'Guarana']
+
+roboflow:
+  workspace: thucostas-workspace
+  project: ounceai_14-04
+  version: 4
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/thucostas-workspace/ounceai_14-04/dataset/4
