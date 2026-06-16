@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ounce AI - Visor Cinematográfico</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <style>
+        :root { --accent: #ffcc00; }
+        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #000; font-family: 'Montserrat', sans-serif; }
+        #video-wrapper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #000; overflow: hidden; }
+        video { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; transition: opacity 0.2s linear; opacity: 0; transform: scale(1.15); }
+        video.active { opacity: 1; z-index: 2; }
+        #overlay-text { position: absolute; top: 0; right: 0; width: 50%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 999; pointer-events: none; padding: 40px; box-sizing: border-box; }
+        .phrase { font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 900; color: #ffffff; text-transform: uppercase; text-align: center; line-height: 1; padding: 0; max-width: 90%; opacity: 0; filter: blur(10px); letter-spacing: 10px; transform: translateY(20px) scale(0.95); background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; border: none; text-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+        .phrase.visible { opacity: 1 !important; filter: blur(0) !important; letter-spacing: 0 !important; transform: translateY(0) scale(1) !important; }
+        #controls { position: fixed; bottom: 30px; right: 30px; z-index: 1000; display: flex; gap: 10px; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 20px; backdrop-filter: blur(10px); }
+        button { padding: 12px 20px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; cursor: pointer; font-weight: 900; transition: 0.3s; }
+        button.active { border-color: var(--accent); color: var(--accent); background: rgba(255,204,0,0.1); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        #logo { position: fixed; bottom: 30px; left: 30px; z-index: 1000; width: 150px; opacity: 0; transition: all 0.8s ease; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); }
+        #logo.visible { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <img id="logo" src="logo.png" alt="Ounce AI">
+
+    <div id="video-wrapper">
+        <video id="vid1" class="active" autoplay muted playsinline></video>
+        <video id="vid2" autoplay muted playsinline></video>
+    </div>
+
+    <div id="overlay-text"><h1 id="text-target" class="phrase"></h1></div>
+
+    <div id="controls">
+        <button id="btn-leite" onclick="changeProduct('LEITE', this)">LEITE</button>
+        <button id="btn-coca" onclick="changeProduct('COCA', this)">COCA</button>
+        <button id="btn-guarana" onclick="changeProduct('GUARANA', this)">GUARANÁ</button>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:3001/api/frases/"; 
+        
+        const assets = {
+            LEITE: { file: 'leite.webm', rev: 'rv_leite.webm', id: 3, to: { COCA: 'tr_leitecoca.webm', GUARANA: 'tr_leiteguarana.webm' } },
+            COCA: { file: 'coca.webm', rev: 'rv_coca.webm', id: 4, to: { GUARANA: 'tr_cocaguarana.webm', LEITE: 'tr_cocaleite.webm' } },
+            GUARANA: { file: 'guarana.webm', rev: 'rv_guarana.webm', id: 5, to: { COCA: 'tr_guaranacoca.webm', LEITE: 'tr_guaranaleite.webm' } }
+        };
+
+        let current = null, phrasesPool = ["OUNCE AI"], phraseIdx = 0;
+        let isTransitioning = false;
+        const v1 = document.getElementById('vid1'), v2 = document.getElementById('vid2');
+        let activeVid = v1, idleVid = v2;
+        const textElem = document.getElementById('text-target');
+
+        // MQTT: Gatilho automático pela balança e câmera
+        const mqtt = new Paho.MQTT.Client("broker.hivemq.com", 8000, "Visor_" + Math.random());
+        mqtt.onMessageArrived = (msg) => {
+            try {
+                const data = JSON.parse(msg.payloadString);
+                const target = data.produto; // "LEITE", "COCA", "GUARANA"
+                if (target && assets[target]) {
+                    const btn = document.getElementById('btn-' + target.toLowerCase());
+                    changeProduct(target, btn);
+                }
+            } catch(e) {}
+        };
+        mqtt.connect({ onSuccess: () => mqtt.subscribe("ounceai/ofertas/trigger") });
+
+        async function fetchData(id) {
+            try {
+                // Compatível com servidor Node local ou Netlify Functions
+                const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:";
+                const url = isLocal 
+                    ? `http://localhost:3001/api/frases/${id}`
+                    : `/.netlify/functions/frases?id=${id}`;
+                    
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.frases) phrasesPool = data.frases;
+            } catch (err) { phrasesPool = ["OUNCE AI"]; }
+        }
+
+        async function playVideo(src, mode, onEnd) {
+            activeVid.ontimeupdate = null;
+            idleVid.src = src;
+            idleVid.load();
+            idleVid.onloadeddata = async () => {
+                try {
+                    idleVid.playbackRate = (mode === 'TRANSITION') ? 1.7 : 1.0;
+                    
+                    if (mode === 'LOOP_FORWARD') {
+                        // Inicia o vídeo normal faltando 1 segundo para o fim
+                        idleVid.currentTime = idleVid.duration > 1.0 ? idleVid.duration - 1.0 : 0;
+                    }
+
+                    await idleVid.play();
+                    idleVid.classList.add('active'); 
+                    activeVid.classList.remove('active');
+                    [activeVid, idleVid] = [idleVid, activeVid];
+
+                    activeVid.ontimeupdate = function() {
+                        if (mode === 'NORMAL_FULL' || mode === 'LOOP_FORWARD') {
+                            if (activeVid.currentTime >= activeVid.duration - 0.2) {
+                                activeVid.ontimeupdate = null;
+                                if (mode === 'NORMAL_FULL') showText();
+                                playVideo(assets[current].rev, 'LOOP_REVERSE', onEnd);
+                            }
+                        }
+                        else if (mode === 'LOOP_REVERSE') {
+                            // Toca apenas 1 segundo do vídeo reverso (que é o final de trás pra frente)
+                            if (activeVid.currentTime >= 1.0) {
+                                activeVid.ontimeupdate = null;
+                                playVideo(assets[current].file, 'LOOP_FORWARD', onEnd);
+                            }
+                        }
+                        else if (mode === 'TRANSITION') {
+                            if (activeVid.currentTime >= activeVid.duration - 0.4) {
+                                activeVid.ontimeupdate = null;
+                                if (onEnd) onEnd();
+                            }
+                        }
+                    };
+
+                    if(mode === 'NORMAL_FULL') toggleButtons(true);
+                } catch (e) { console.error("Erro no play:", e); }
+            };
+        }
+
+        async function changeProduct(target, btn) {
+            if(isTransitioning || (current === target)) return;
+            isTransitioning = true; 
+            toggleButtons(false); 
+            hideText();
+            
+            document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            
+            await fetchData(assets[target].id);
+
+            if (!current) { 
+                current = target; 
+                playVideo(assets[current].file, 'NORMAL_FULL'); 
+                isTransitioning = false; 
+                return; 
+            }
+            
+            playVideo(assets[current].to[target], 'TRANSITION', async () => {
+                current = target; 
+                playVideo(assets[current].file, 'NORMAL_FULL'); 
+                isTransitioning = false;
+            });
+        }
+
+        function showText() { 
+            textElem.innerText = phrasesPool[phraseIdx]; 
+            textElem.classList.add('visible'); 
+            phraseIdx = (phraseIdx + 1) % phrasesPool.length; 
+            document.getElementById('logo').classList.add('visible');
+        }
+        function hideText() { 
+            textElem.classList.remove('visible'); 
+            document.getElementById('logo').classList.remove('visible');
+        }
+        function toggleButtons(e) { document.querySelectorAll('button').forEach(b => b.disabled = !e); }
+
+        window.onload = () => {
+            textElem.innerText = "OUNCE AI";
+            textElem.classList.add('visible');
+            document.getElementById('logo').classList.add('visible');
+        };
+    </script>
+</body>
+</html>
